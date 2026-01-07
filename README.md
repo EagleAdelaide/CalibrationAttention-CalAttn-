@@ -1,99 +1,198 @@
-# Reproducible CIFAR-10/100 Training: Multi-loss & Multi-backbone
+# Calibration Attention (CalAttn) — Reproducible IJCAI-26 Experiments
 
-This repository contains a single self-contained training script that reproduces the experiments in your paper setup: multiple losses (CE, Brier, CE+0.1*Brier, Label Smoothing, Focal, Adaptive Focal, Dual Focal, AdaFocal) across multiple backbones (ResNet-50, ResNet-110 (CIFAR style), WideResNet-28x10, DenseNet-121). It also evaluates Temperature Scaling (TS), draws reliability diagrams, logs metrics to CSV, and uses cross-host lock files plus "done" markers so multiple workers won't duplicate the same job.
+This repository reproduces the experiments described in the paper:
+**Calibration Attention: Representation-Conditioned Temperature Scaling for Vision Transformers**.
+![alt text](calAttn_architect.png)
+It supports:
+- Datasets: CIFAR-10/100, MNIST, Tiny-ImageNet, ImageNet-1K
+- Backbones: ViT-224, DeiT-S, Swin-S (via timm); CNNs via timm/torchvision
+- Methods: CE, WD, Brier, CE+BS, MMCE, Label Smoothing, Focal (FLSD-53-style), Dual Focal (DFL),
+  Relaxed Softmax, SATS (post-hoc), and CalAttn (joint training).
+- Post-hoc temperature scaling (TS): grid-search T in {0.1,0.2,...,10.0}, chosen by validation ECE.
+* Full calibration metrics:
 
-## Environment
+  * ECE, MCE, AdaECE, Classwise-ECE, Smooth-ECE, NLL, Brier, AUROC (OOD)
+---
 
-- Python 3.8+
-- PyTorch >= 2.0 (CUDA optional)
-- torchvision >= 0.15
-- matplotlib
-
-You can use conda to create a clean environment:
-
-```bash
-conda create -y -n calib python=3.10
-conda activate calib
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121  # or cpu wheels
-pip install matplotlib
-```
-
-> If you prefer CPU-only: `pip install torch torchvision` (without the CUDA index). The script auto-disables AMP on CPU.
-
-## Files
-
-- `many_losses_multibackbone_training.py` — main training/eval script (single file).
-- Outputs (under `--out-dir`):
-  - `*_methods_log.csv` — per-epoch metrics.
-  - `reliability_<dataset>_<backbone>_<method>.png` — reliability diagrams (before vs after TS).
-  - `done_<dataset>_<backbone>_<method>.json` — done markers (used to skip on next runs).
-  - `error_*.txt` — traceback if a run crashes.
-  - `val_bin_stats.txt` — AdaFocal per-epoch bin statistics.
-
-## Quick Start
-
-CIFAR-10 with default backbones and all methods:
+## 1. Installation
 
 ```bash
-python many_losses_multibackbone_training.py --dataset cifar10 --out-dir runs/c10
+git clone https://github.com/yourname/calattn-repro.git
+cd calattn-repro
+
+python -m venv venv
+source venv/bin/activate
+
+pip install -r requirements.txt
 ```
 
-CIFAR-100:
+`requirements.txt` contains:
 
-```bash
-python many_losses_multibackbone_training.py --dataset cifar100 --out-dir runs/c100   --backbones resnet50,resnet110,wideresnet28x10,densenet121
 ```
-
-Run a subset of backbones (example: only ResNet-50):
-
-```bash
-python many_losses_multibackbone_training.py --dataset cifar10 --out-dir runs/c10 --backbones resnet50
+torch>=2.0
+torchvision
+timm
+numpy
+scipy
+scikit-learn
+tqdm
+pyyaml
+matplotlib
 ```
-
-### Important Flags
-
-- `--skip-if-done` (default: on): will skip a specific (dataset, backbone, method) run if its `done_*.json` exists.
-- `--ts-every` (default: 1): perform Temperature Scaling evaluation every `ts-every` epochs for logging; reliability diagrams are generated after training finishes per run.
-- AdaFocal options:
-  - `--adafocal-num-bins 15`
-  - `--adafocal-lambda 2.0`
-  - `--adafocal-gamma-initial 5.0`
-  - `--adafocal-switch-pt 0.25`
-  - `--adafocal-gamma-max 8.0`
-  - `--adafocal-gamma-min -8.0`
-  - `--adafocal-update-every 1`
-
-## Cross-host Mutex and Safe Resume
-
-- The script creates a lock file per `(dataset|backbone|method)` key at: `lock_<key>.lock` inside `--out-dir`. If a lock exists, other workers skip that run.
-- Stale locks: if the lock's mtime is older than 48 hours, the script removes it once and retries.
-- After a run finishes, a `done_<dataset>_<backbone>_<method>.json` is written to allow `--skip-if-done` to skip next time.
-
-## Logged Metrics
-
-For each epoch and method:
-- `test_acc`, `test_ece`, `test_adaece`, `test_classwise_ece`, `test_nll`
-- The same after applying Temperature Scaling: `*_ts` columns
-- For FCL-Metaλ: `lambda_if_any`, `val_smooth_ece_if_any` are populated.
-
-At the end, the script draws line plots over epochs for accuracy/ECE/NLL etc., and saves per-run reliability diagrams.
-
-## Reproducibility Notes
-
-- We set a global seed (`--seed`, default 42) and use standard CIFAR-10/100 data augmentation (random crop + horizontal flip).
-- Learning rate schedule: MultiStepLR at epochs 150 and 250 with `gamma=0.1`.
-- Default epochs: 350.
-- AMP is automatically enabled on CUDA and disabled on CPU.
-
-## Cite
-If your paper needs to be cited in a blind review repo, please include your own reference here.
 
 ---
 
-Good luck with your reviews! If reviewers only want a "single command to reproduce", point them to:
+## 2. Dataset Preparation
 
-```bash
-python many_losses_multibackbone_training.py --dataset cifar100 --out-dir runs/c100   --backbones resnet50,resnet110,wideresnet28x10,densenet121
+### CIFAR-10 / CIFAR-100 / MNIST
+
+Automatically downloaded.
+
+### Tiny-ImageNet
+
+Download from:
+
+```
+http://cs231n.stanford.edu/tiny-imagenet-200.zip
 ```
 
-This will download CIFAR-100 automatically and produce logs & figures under `runs/c100`.
+Unzip into:
+
+```
+calattn-repro/data/tiny-imagenet-200/
+```
+
+### ImageNet-1K
+
+Set environment variable:
+
+```bash
+export IMAGENET_ROOT=/path/to/imagenet
+```
+
+Structure:
+
+```
+IMAGENET_ROOT/
+ ├── train/
+ └── val/
+```
+
+---
+
+## 3. Training
+
+### Example: CIFAR-100, DeiT-Small + CalAttn
+
+```bash
+python src/train.py --config configs/cifar100_deits_calattn.yaml
+```
+
+### Baseline (CE+Brier only, no CalAttn)
+
+```bash
+python src/train.py --config configs/cifar100_deits_ce_brier.yaml
+```
+
+### SATS (post-hoc)
+
+```bash
+python src/calibrate_sats.py \
+  --config configs/cifar100_deits_calattn.yaml \
+  --ckpt checkpoints/cifar100_deits_calattn/best.pth
+```
+
+---
+
+## 4. Post-hoc Temperature Scaling (TS)
+
+```bash
+python src/calibrate_ts.py \
+  --config configs/cifar100_deits_calattn.yaml \
+  --ckpt checkpoints/cifar100_deits_calattn/best.pth
+```
+
+This selects
+( T^* \in {0.1, 0.2, ..., 10.0} )
+to minimize validation ECE.
+
+---
+
+## 5. Evaluation
+
+```bash
+python src/eval.py \
+  --config configs/cifar100_deits_calattn.yaml \
+  --ckpt checkpoints/cifar100_deits_calattn/best.pth
+```
+
+### Example Output
+
+```json
+{
+  "top1": 66.20,
+  "nll": 2.51,
+  "brier": 0.78,
+  "ece": 1.42,
+  "mce": 3.10,
+  "adaece": 1.47,
+  "classece": 0.27,
+  "smece": 1.10
+}
+```
+
+These values directly correspond to Tables in the paper.
+
+---
+
+## 6. OoD Robustness
+
+```bash
+python src/metrics/ood.py \
+  --config configs/cifar10_vit224_calattn.yaml \
+  --ckpt checkpoints/cifar10_vit224_calattn/best.pth \
+  --ood svhn
+```
+
+Outputs AUROC for:
+
+* CIFAR-10 → SVHN
+* CIFAR-10 → CIFAR-10-C
+
+---
+
+## 7. Reproducing Main Tables
+
+| Paper Table              | Command                                    |
+| ------------------------ | ------------------------------------------ |
+| ECE / smECE main results | `train.py` → `calibrate_ts.py` → `eval.py` |
+| SATS comparison          | `calibrate_sats.py` → `eval.py`            |
+| ImageNet-1K              | `configs/imagenet_swinS_calattn.yaml`      |
+| OoD robustness           | `metrics/ood.py`                           |
+| λ-sensitivity            | loop over configs with different λ         |
+| Dirichlet head ablation  | `configs/*_dirichlet.yaml`                 |
+
+---
+
+## 8. One-Command Reproduction
+
+```bash
+bash run.sh
+```
+
+This will:
+
+1. Train all CIFAR-10/100 models
+2. Run TS, SATS
+3. Evaluate all metrics
+4. Dump JSON logs for direct table generation
+
+---
+
+## 9. Notes for Reviewers
+
+* All experiments follow the protocol in Section 4 of the paper.
+* No dataset-specific tuning is applied.
+* Results may vary slightly across GPUs (±0.1 ECE).
+
+---

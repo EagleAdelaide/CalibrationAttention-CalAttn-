@@ -1,0 +1,7 @@
+torch>=2.2
+torchvision>=0.17
+timm>=0.9.16
+numpy>=1.24
+pyyaml>=6.0
+tqdm>=4.66
+scikit-learn>=1.3
