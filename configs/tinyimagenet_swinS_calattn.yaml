@@ -1,0 +1,41 @@
+run:
+  name: tinyimagenet_swinS_calattn
+  out_dir: outputs
+  seed: 0
+
+data:
+  dataset: tinyimagenet
+  data_dir: /path/to/tiny-imagenet-200
+  img_size: 224
+  batch_size: 128
+  num_workers: 8
+  val_split: 0.05
+
+model:
+  backbone: swin_small_patch4_window7_224
+  num_classes: 200
+  pretrained: true
+
+method:
+  name: calattn
+  lambda_brier: 0.1
+  calattn_hidden: 128
+  calattn_on: cls
+
+optim:
+  optimizer: sgd
+  lr: 0.1
+  weight_decay: 5e-4
+  momentum: 0.9
+
+sched:
+  type: step
+  epochs: 350
+  milestones: [150, 250]
+  gamma: 0.1
+
+eval:
+  do_ts: true
+  ts_bins: 15
+  ts_grid: [0.1, 10.0, 0.1]
+  save_logits: true
