@@ -99,7 +99,7 @@ python src/train.py --config configs/cifar100_deits_ce_brier.yaml
 ```bash
 python src/calibrate_sats.py \
   --config configs/cifar100_deits_calattn.yaml \
-  --ckpt checkpoints/cifar100_deits_calattn/best.pth
+  --ckpt your/path/to/outputs/cifar100_deits_calattn/seed0/best.pt
 ```
 
 ---
@@ -109,7 +109,7 @@ python src/calibrate_sats.py \
 ```bash
 python src/calibrate_ts.py \
   --config configs/cifar100_deits_calattn.yaml \
-  --ckpt checkpoints/cifar100_deits_calattn/best.pth
+  --ckpt your/path/to/outputs/cifar100_deits_calattn/seed0/best.pt
 ```
 
 This selects
@@ -123,7 +123,7 @@ to minimize validation ECE.
 ```bash
 python src/eval.py \
   --config configs/cifar100_deits_calattn.yaml \
-  --ckpt checkpoints/cifar100_deits_calattn/best.pth
+  --ckpt your/path/to/outputs/cifar100_deits_calattn/seed0/best.pt
 ```
 
 ### Example Output
@@ -148,10 +148,13 @@ These values directly correspond to Tables in the paper.
 ## 6. OoD Robustness
 
 ```bash
-python src/metrics/ood.py \
-  --config configs/cifar10_vit224_calattn.yaml \
-  --ckpt checkpoints/cifar10_vit224_calattn/best.pth \
-  --ood svhn
+python src/eval_ood.py
+--config configs/cifar10_vit224_calattn.yaml
+--ckpt your/path/to/outputs/cifar10_vit224_calattn/seed0/best.pt
+--c10c_root /data/cifar10c
+ --c10c_severity 5
+--c10c_corruptions all
+--save_json
 ```
 
 Outputs AUROC for:
@@ -168,7 +171,7 @@ Outputs AUROC for:
 | ECE / smECE main results | `train.py` → `calibrate_ts.py` → `eval.py` |
 | SATS comparison          | `calibrate_sats.py` → `eval.py`            |
 | ImageNet-1K              | `configs/imagenet_swinS_calattn.yaml`      |
-| OoD robustness           | `metrics/ood.py`                           |
+| OoD robustness           | `src/eval_ood.py`                           |
 | λ-sensitivity            | loop over configs with different λ         |
 | Dirichlet head ablation  | `configs/*_dirichlet.yaml`                 |
 
