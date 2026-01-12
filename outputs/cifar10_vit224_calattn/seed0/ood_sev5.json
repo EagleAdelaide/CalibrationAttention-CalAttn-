@@ -1,0 +1,76 @@
+{
+  "id_dataset": "cifar10",
+  "model_backbone": "vit_base_patch16_224",
+  "img_size": 224,
+  "batch_size": 64,
+  "num_workers": 8,
+  "auroc_c10_to_svhn": 73.80446623386601,
+  "c10c_root_used": "/home/eagle/.cache/calattn-repro/cifar10c",
+  "c10c_dir_used": "/home/eagle/.cache/calattn-repro/cifar10c/CIFAR-10-C",
+  "c10c_severity": 5,
+  "c10c_corruptions": [
+    "gaussian_noise",
+    "shot_noise",
+    "impulse_noise",
+    "defocus_blur",
+    "glass_blur",
+    "motion_blur",
+    "zoom_blur",
+    "snow",
+    "frost",
+    "fog",
+    "brightness",
+    "contrast",
+    "elastic_transform",
+    "pixelate",
+    "jpeg_compression"
+  ],
+  "auroc_c10_to_c10c_by_corruption": {
+    "gaussian_noise": {
+      "auroc": 65.3155295
+    },
+    "shot_noise": {
+      "auroc": 65.7691145
+    },
+    "impulse_noise": {
+      "auroc": 74.746552
+    },
+    "defocus_blur": {
+      "auroc": 62.4168135
+    },
+    "glass_blur": {
+      "auroc": 63.822186
+    },
+    "motion_blur": {
+      "auroc": 61.8674305
+    },
+    "zoom_blur": {
+      "auroc": 60.79918849999999
+    },
+    "snow": {
+      "auroc": 64.73487
+    },
+    "frost": {
+      "auroc": 66.7721535
+    },
+    "fog": {
+      "auroc": 73.4049965
+    },
+    "brightness": {
+      "auroc": 59.505555
+    },
+    "contrast": {
+      "auroc": 64.21232800000001
+    },
+    "elastic_transform": {
+      "auroc": 60.712462
+    },
+    "pixelate": {
+      "auroc": 59.334108500000006
+    },
+    "jpeg_compression": {
+      "auroc": 58.779681
+    }
+  },
+  "auroc_c10_to_c10c_mean": 64.14619793333331
+}

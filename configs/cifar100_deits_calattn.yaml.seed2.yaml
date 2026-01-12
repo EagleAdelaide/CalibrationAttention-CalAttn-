@@ -1,0 +1,42 @@
+data:
+  batch_size: 128
+  data_dir: ./data
+  dataset: cifar100
+  img_size: 224
+  num_workers: 8
+  val_split: 0.05
+eval:
+  do_ts: true
+  save_logits: true
+  ts_bins: 15
+  ts_grid:
+  - 0.1
+  - 10.0
+  - 0.1
+method:
+  calattn_hidden: 128
+  calattn_on: cls
+  label_smoothing: 0.1
+  lambda_brier: 0.1
+  name: calattn
+  relaxed_hidden: 128
+model:
+  backbone: deit_small_patch16_224
+  num_classes: 100
+  pretrained: true
+optim:
+  lr: 0.1
+  momentum: 0.9
+  optimizer: sgd
+  weight_decay: 5e-4
+run:
+  name: cifar100_deits_calattn
+  out_dir: outputs
+  seed: 2
+sched:
+  epochs: 2
+  gamma: 0.1
+  milestones:
+  - 150
+  - 250
+  type: step

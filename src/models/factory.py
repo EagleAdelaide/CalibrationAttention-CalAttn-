@@ -15,7 +15,6 @@ def build_backbone(cfg):
     model = timm.create_model(name, pretrained=pretrained, num_classes=num_classes)
     return model
 
-
 def build_model_and_wrapper(cfg):
     method = cfg["method"]["name"].lower()
     backbone = build_backbone(cfg)
@@ -24,13 +23,15 @@ def build_model_and_wrapper(cfg):
         return CalAttnWrapper(
             backbone=backbone,
             hidden=int(cfg["method"].get("calattn_hidden", 128)),
-            mode=str(cfg["method"].get("calattn_on", "cls"))
+            mode=str(cfg["method"].get("calattn_on", "cls")),
+            eps=float(cfg["method"].get("eps", 1e-6)),
         )
+
     if method == "relaxed_softmax":
         return RelaxedSoftmaxWrapper(
             backbone=backbone,
             hidden=int(cfg["method"].get("relaxed_hidden", 128)),
         )
 
-    # default: return backbone (CE/BS/MMCE/DFL etc. operate on logits)
     return backbone
+

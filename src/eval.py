@@ -36,7 +36,8 @@ def main():
     )
 
     model = build_model_and_wrapper(cfg).to(device)
-    ckpt = torch.load(args.ckpt, map_location="cpu")
+    # ckpt = torch.load(args.ckpt, map_location="cpu")
+    ckpt = torch.load(args.ckpt, map_location="cpu", weights_only=True)
     model.load_state_dict(ckpt["model"])
     model.eval()
 

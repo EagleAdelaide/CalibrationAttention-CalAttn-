@@ -127,3 +127,39 @@ def full_eval_summary_from_logits(
     out = {"top1": float(top1), "nll": float(nll), "brier": float(brier)}
     out.update({k.lower(): float(v) for k, v in cal.items()})  # e.g., ece, adaece, classece, smece
     return out
+
+
+import torch
+
+@torch.no_grad()
+def calibration_summary(
+    logits: torch.Tensor,
+    y: torch.Tensor,
+    n_bins: int = 15,
+    prefix: str = ""
+):
+    """
+    Return a dict of standard metrics used in the paper.
+    Assumes logits shape (N, C) and y shape (N,).
+    """
+    out = {}
+    # Required basic metrics (must exist in this file)
+    if "accuracy_top1" in globals():
+        out[prefix + "top1"] = float(accuracy_top1(logits, y) * 100.0)
+    if "nll_loss_from_logits" in globals():
+        out[prefix + "nll"] = float(nll_loss_from_logits(logits, y))
+    if "brier_score_from_logits" in globals():
+        out[prefix + "brier"] = float(brier_score_from_logits(logits, y))
+
+    if "ece_equal_width" in globals():
+        out[prefix + "ece"] = float(ece_equal_width(logits, y, n_bins=n_bins) * 100.0)
+    if "mce_equal_width" in globals():
+        out[prefix + "mce"] = float(mce_equal_width(logits, y, n_bins=n_bins) * 100.0)
+    if "adaece" in globals():
+        out[prefix + "adaece"] = float(adaece(logits, y, n_bins=n_bins) * 100.0)
+    if "classwise_ece" in globals():
+        out[prefix + "classece"] = float(classwise_ece(logits, y, n_bins=n_bins) * 100.0)
+    if "smooth_ece" in globals():
+        out[prefix + "smece"] = float(smooth_ece(logits, y) * 100.0)
+
+    return out
