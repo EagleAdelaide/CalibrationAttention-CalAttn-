@@ -143,6 +143,7 @@ def calibration_summary(
     Assumes logits shape (N, C) and y shape (N,).
     """
     out = {}
+    probs = probs_from_logits(logits)
     # Required basic metrics (must exist in this file)
     if "accuracy_top1" in globals():
         out[prefix + "top1"] = float(accuracy_top1(logits, y) * 100.0)
@@ -156,9 +157,11 @@ def calibration_summary(
     if "mce_equal_width" in globals():
         out[prefix + "mce"] = float(mce_equal_width(logits, y, n_bins=n_bins) * 100.0)
     if "adaece" in globals():
-        out[prefix + "adaece"] = float(adaece(logits, y, n_bins=n_bins) * 100.0)
+        # adaece expects probabilities and already returns percentage points
+        out[prefix + "adaece"] = float(adaece(probs, y, n_bins=n_bins))
     if "classwise_ece" in globals():
-        out[prefix + "classece"] = float(classwise_ece(logits, y, n_bins=n_bins) * 100.0)
+        # classwise_ece expects probabilities and already returns percentage points
+        out[prefix + "classece"] = float(classwise_ece(probs, y, n_bins=n_bins))
     if "smooth_ece" in globals():
         out[prefix + "smece"] = float(smooth_ece(logits, y) * 100.0)
 
