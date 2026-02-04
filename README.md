@@ -5,8 +5,8 @@ This repository reproduces the experiments described in the paper:
 ![alt text](calAttn_architect.png)
 It supports:
 - Datasets: CIFAR-10/100, MNIST, Tiny-ImageNet, ImageNet-1K
-- Backbones: ViT-224, DeiT-S, Swin-S (via timm); CNNs via timm/torchvision
-- Methods: CE, WD, Brier, CE+BS, MMCE, Label Smoothing, Focal (FLSD-53-style), Dual Focal (DFL),
+- Backbones: ViT-224, DeiT-S, Swin-S (via timm)
+- Methods: CE, Brier, CE+BS, MMCE, Label Smoothing, Focal (FLSD-53-style), Dual Focal (DFL),
   Relaxed Softmax, SATS (post-hoc), and CalAttn (joint training).
 - Post-hoc temperature scaling (TS): grid-search T in {0.1,0.2,...,10.0}, chosen by validation ECE.
 * Full calibration metrics:
@@ -29,15 +29,13 @@ pip install -r requirements.txt
 `requirements.txt` contains:
 
 ```
-torch>=2.0
-torchvision
-timm
-numpy
-scipy
-scikit-learn
-tqdm
-pyyaml
-matplotlib
+torch>=2.2
+torchvision>=0.17
+timm>=0.9.16
+numpy>=1.24
+pyyaml>=6.0
+tqdm>=4.66
+scikit-learn>=1.3
 ```
 
 ---
@@ -64,16 +62,12 @@ calattn-repro/data/tiny-imagenet-200/
 
 ### ImageNet-1K
 
-Set environment variable:
+Set the dataset root in your config under `data.data_dir` and use `dataset: imagenet1k`.
 
-```bash
-export IMAGENET_ROOT=/path/to/imagenet
-```
-
-Structure:
+Expected structure:
 
 ```
-IMAGENET_ROOT/
+/path/to/imagenet/
  ├── train/
  └── val/
 ```
@@ -148,13 +142,13 @@ These values directly correspond to Tables in the paper.
 ## 6. OoD Robustness
 
 ```bash
-python src/eval_ood.py
---config configs/cifar10_vit224_calattn.yaml
---ckpt your/path/to/outputs/cifar10_vit224_calattn/seed0/best.pt
---c10c_root /data/cifar10c
- --c10c_severity 5
---c10c_corruptions all
---save_json
+python src/eval_ood.py \
+  --config configs/cifar10_vit224_calattn.yaml \
+  --ckpt your/path/to/outputs/cifar10_vit224_calattn/seed0/best.pt \
+  --c10c_root /data/cifar10c \
+  --c10c_severity 5 \
+  --c10c_corruptions all \
+  --save_json
 ```
 
 Outputs AUROC for:
@@ -170,10 +164,10 @@ Outputs AUROC for:
 | ------------------------ | ------------------------------------------ |
 | ECE / smECE main results | `train.py` → `calibrate_ts.py` → `eval.py` |
 | SATS comparison          | `calibrate_sats.py` → `eval.py`            |
-| ImageNet-1K              | `configs/imagenet_swinS_calattn.yaml`      |
-| OoD robustness           | `src/eval_ood.py`                           |
+| Tiny-ImageNet            | `configs/tinyimagenet_swinS_calattn.yaml`  |
+| OoD robustness           | `src/eval_ood.py`                          |
 | λ-sensitivity            | loop over configs with different λ         |
-| Dirichlet head ablation  | `configs/*_dirichlet.yaml`                 |
+| Dirichlet head ablation  | not included                   |
 
 ---
 
@@ -185,10 +179,8 @@ bash run.sh
 
 This will:
 
-1. Train all CIFAR-10/100 models
-2. Run TS, SATS
-3. Evaluate all metrics
-4. Dump JSON logs for direct table generation
+1. Train CIFAR-100 DeiT-S CalAttn for seeds 0/1/2
+2. Run TS and SATS on each checkpoint
 
 ---
 
