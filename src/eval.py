@@ -15,6 +15,16 @@ from metrics.calibration import (
 )
 
 
+def safe_torch_load(path: str, map_location="cpu"):
+    """
+    weights_only=True exists in newer PyTorch; fall back gracefully.
+    """
+    try:
+        return torch.load(path, map_location=map_location, weights_only=True)
+    except TypeError:
+        return torch.load(path, map_location=map_location)
+
+
 @torch.no_grad()
 def main():
     ap = argparse.ArgumentParser()
@@ -36,8 +46,7 @@ def main():
     )
 
     model = build_model_and_wrapper(cfg).to(device)
-    # ckpt = torch.load(args.ckpt, map_location="cpu")
-    ckpt = torch.load(args.ckpt, map_location="cpu", weights_only=True)
+    ckpt = safe_torch_load(args.ckpt, map_location="cpu")
     model.load_state_dict(ckpt["model"])
     model.eval()
 
