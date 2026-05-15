@@ -1,4 +1,4 @@
-# Calibration Attention (CalAttn) — Reproducible IJCAI-26 Experiments
+# Calibration Attention (CalAttn) — Reproducible Experiments
 
 This repository reproduces the experiments described in the paper:
 **Calibration Attention: Representation-Conditioned Temperature Scaling for Vision Transformers**.
